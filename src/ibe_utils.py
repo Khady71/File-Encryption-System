@@ -24,8 +24,7 @@ class IBEEncryption:
         self.s = self.group.random(ZR)
         self.P_pub = self.s * self.P
         self.initialized = True
-        
-        print("Paramètres système générés avec succès")
+        print("Publics parameters are successfully generated")
         return self.P, self.P_pub, self.s
     
     # =========================
@@ -34,13 +33,13 @@ class IBEEncryption:
     
     def extract(self, ID):
         if not self.initialized:
-            raise Exception("Le système n'a pas été initialisé. Exécutez setup() d'abord.")
+            raise Exception("The system is not initialized")
         
         # Hash de l'identité vers un point de la courbe
         Q_id = self.group.hash(ID,G1)
         d_id = self.s * Q_id
         
-        print(f"Clé privée générée pour l'identité '{ID}'")
+        print(f"Private key is generated for id : '{ID}'")
         return d_id
     
     # =========================
@@ -50,7 +49,7 @@ class IBEEncryption:
     def encrypt(self, ID, message, return_as_int=True):
     
         if not self.initialized:
-            raise Exception("Le système n'a pas été initialisé. Exécutez setup() d'abord.")
+            raise Exception("The system is not initialized. Run setup() before")
         
         # Convertir le message en entier si nécessaire
         if isinstance(message, str):
@@ -102,7 +101,7 @@ class IBEEncryption:
         else:
             message = message_int
         
-        print("Message déchiffré avec succès")
+        print("Message is decrypted successfully")
         return message
     
     # =========================
