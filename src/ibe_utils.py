@@ -1,8 +1,25 @@
 from charm.toolbox.pairinggroup import PairingGroup, G1, ZR, GT, pair
 from charm.toolbox.hash_module import Hash
 
-from charm.toolbox.pairinggroup import PairingGroup, G1, ZR, pair
+from charm.toolbox.pairinggroup import PairingGroup, G1, ZR, pair, serialize, deserialize
 from charm.toolbox.hash_module import Hash
+import base64
+
+
+def element_to_storable(element):
+    """Convert pairing element to storable format"""
+    # serialize() returns bytes, we convert to base64 string for JSON
+    return base64.b64encode(serialize(element)).decode('utf-8')
+
+
+def storable_to_element(storable_str):
+    """Convert stored string back to pairing element"""
+    # Create a pairing group for deserialization
+    group = PairingGroup('SS512')
+    # Decode base64 and deserialize
+    return deserialize(base64.b64decode(storable_str), group)
+
+
 
 class IBEEncryption:
     def __init__(self, group_curve='SS512'):
@@ -27,20 +44,18 @@ class IBEEncryption:
         print("Publics parameters are successfully generated")
         return self.P, self.P_pub, self.s
     
+
     # =========================
     # Extract
     # =========================
-    
     def extract(self, ID):
-        if not self.initialized:
-            raise Exception("The system is not initialized")
         
-        # Hash de l'identité vers un point de la courbe
         Q_id = self.group.hash(ID,G1)
         d_id = self.s * Q_id
         
         print(f"Private key is generated for id : '{ID}'")
         return d_id
+
     
     # =========================
     # Encrypt
@@ -48,8 +63,8 @@ class IBEEncryption:
     
     def encrypt(self, ID, message, return_as_int=True):
     
-        if not self.initialized:
-            raise Exception("The system is not initialized. Run setup() before")
+        # if not self.initialized:
+        #     raise Exception("The system is not initialized. Run setup() before")
         
         # Convertir le message en entier si nécessaire
         if isinstance(message, str):
@@ -57,6 +72,7 @@ class IBEEncryption:
         else:
             message_int = message
         
+        # print("Hello Khady, i am hereee")
         
         Q_id = self.group.hash(ID,G1)
         r = self.group.random(ZR)
@@ -122,6 +138,5 @@ class IBEEncryption:
         status = "initialisé" if self.initialized else "non initialisé"
         return f"IBEEncryption(système={status})"
 
-
-
+    
 

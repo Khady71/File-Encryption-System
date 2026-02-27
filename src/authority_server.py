@@ -1,14 +1,20 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from ibe_utils import IBEEncryption
+from pathlib import Path
+import pickle
+from ibe_utils import IBEEncryption, element_to_storable, storable_to_element
+from charm.toolbox.pairinggroup import serialize, deserialize, PairingGroup
+import json
+import base64
 
-app = FastAPI()
 
 # Global variables
 _ibe = None
 _P = None
 _P_pub = None
 _s = None
-SETUP_FILE = Path("ibe_state.pkl")
+SETUP_FILE = Path("ibe_state.json")
+
 
 def initialize_ibe():
     """Initialize IBE system (runs once)"""
@@ -16,39 +22,86 @@ def initialize_ibe():
     
     
     if SETUP_FILE.exists():
-        with open(SETUP_FILE, 'rb') as f:
-            state = pickle.load(f)
-            _ibe = state['ibe']
-            _P = state['P']
-            _P_pub = state['P_pub']
-            _s = state['s']
-        print("Loaded existing IBE state")
-        return
+        try:
+            with open(SETUP_FILE, 'r') as f:
+                pub_params = json.load(f)
+                _P = deserialize(pub_params['P'])
+                _P_pub = deserialize(pub_params['P_pub'])
+                _s = deserialize(pub_params['s'])
+
+                _ibe = IBEEncryption('SS512')
+
+
+                _ibe.P = _P
+                _ibe.P_pub = _P_pub
+                _ibe.s = _s
+                _ibe.initialized = True
+
+
+                print("Loaded existing IBE state")
+                return
+        except Exception as e:
+            print(f"Error loading state: {e}")
+            print("Will generate new parameters...")
     
+    print(" Generating new IBE parameters...")
     _ibe = IBEEncryption('SS512')
     _P, _P_pub, _s = _ibe.setup()
     
     # Save state for next time
-    with open(SETUP_FILE, 'wb') as f:
-        pickle.dump({
-            'ibe': _ibe,
-            'P': _P,
-            'P_pub': _P_pub,
-            's': _s
-        }, f)
+    try:
+        with open(SETUP_FILE, 'w') as f:
+            json.dump({
+                'P': serialize(_P),
+                'P_pub': serialize(_P_pub),
+                's': serialize(_s),
+                'version': '1.0'
+            }, f, indent=2)
+        print(f"IBE state saved to {SETUP_FILE}")
+    except Exception as e:
+        print(f"Warning: Could not save public parameters: {e}")
+
+
     
-def extract(email):
-    d_id = ibe.extract(email)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialise ibe server
+    initialize_ibe()
+    yield
+    # reset ibe_server
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/setup")
-def setup_system():
-    ibe, P, P_pub, s = setup()
-    return {"ibe" : ibe, "P" : P, "P_pub" : P_pub, "s" : s}
+def get_public_params():
+    global _P, _P_pub
+    return {
+        "P" : serialize(_P), 
+        "P_pub" : serialize(_P_pub)
+    }
 
 
 @app.get("/getPrivateKey/{email}")
-def get(email: str):
-    d_id = extract(email)
-    return {"d_id": d_id}
+def get_private_key(email: str):
+    global _ibe
+    if not _ibe:
+        initialize_ibe()
+    try:
+        d_id = _ibe.extract(email)
+        return {
+            "email": email,
+            "d_id": element_to_storable(d_id)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.get("/reset")
+def reset_system():
+    # reset_ibe_server()
+    return {"message": "System reset successfully"}
 

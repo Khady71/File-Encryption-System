@@ -1,6 +1,8 @@
 from ibe_utils import IBEEncryption
 import random
 import time
+import requests
+from user import User
 
 
 
@@ -21,81 +23,85 @@ def get_michael_scott_quote():
     
     return random.choice(quotes)
     
-def setup():
-    ibe = IBEEncryption('SS512')
-    P, P_pub, s = ibe.setup()
-    return ibe, P, P_pub, s 
 
-    
-def extract(email):
-    print("\nGénération de la clé privée ")
-    private_key = ibe.extract(email)
-    return private_key
+def create_user_from_server():
 
-def encrypt(recipient_email, message_original):
-    print("\nChiffrement d'un message")
-    print(f"Message original: '{message_original}'")
-    U, ciphertext = ibe.encrypt(recipient_email, message_original)
-    print(f"   U: {U}")
-    print(f"   Ciphertext: {ciphertext}")
-    return U, ciphertext
+    print("\n Connecting to IBE server")
+    try:
+        response = requests.get("http://localhost:8000/setup")
+        response.raise_for_status()
+        data = response.json()
 
-def decrypt(U, ciphertext):
-    print("\Déchiffrement par Alice")
-    message_dechiffre = ibe.decrypt(d_alice, (U, ciphertext), decode_to_string=True)
-    print(f"   Message déchiffré: '{message_dechiffre}'")
-    return message_dechiffre 
+        user = User(P=data['P'], P_pub=data['P_pub'])
+        print(f" User created with server's public parameters")
+        return user
+    except Exception as e:
+        print(f" Failed to connect to server: {e}")
+        return None
 
-
-
-def menuPrincipal():
-        print("*********************** Welcome To Encrypt and Send **********************")
-        print("************************** Setting up System*********************")
+def menu_principal(user):
+    while True:
+        print("\n" + "="*60)
+        print(" Welcome To ENCRYPT AND SEND ")
+        print("\n" + "="*60)
+        print(f" Current user: {user.ID if user.ID else "Not set"}")
+        print(f" Private key:{ "Loaded" if user.d_id else "Not loaded"}")
+        print(f"Public params: {'Configured' if user.ibe else 'Not configured'}")
         
-        time.sleep(4)
-        print("**************** [1] Encrypt a message to be sent to a recipient ****************")
-        print("***************** [2] Generate a private key from email *******************")
-        print("******************* [3] Decrypt a message sent to you *********************")
-        print("******************* [4] Fun Fact : Michal Scott one said :) *********************")
-        print("******************* [5] Quit App*********************")
+        print("\nOptions:")
+        print("[1] Encrypt a message")
+        print("[2] Get private key")
+        print("[3] Decrypt a message")
+        print("[4] Fun Fact : Michael Scott once said : ")
+        print("[5] Quit")   
 
+        choice = input("\nChoose : ")
 
-        print("*************** Choose an option : *****************")
-        option =  int(input("**************** => Choosen option : "))
-        if(option == 1):
-            print("******************************************************************************")
-            print("**************** [1] Encrypting a message to be sent to a recipient****************%n")
-            recipient_email = str(input("Write the recipient email : "))
-            plain_message = str (input("Write the message : "))
-            U, ciphertext = encrypt(recipient_email, plain_message)
-            
-            
-        elif(option == 2):
-            print("******************************************************************************")
-            print("**************** [2] Generating a private key from email ****************%n")
-            email = str(input("Write you email : "))
-            time.sleep(4)
-            private_key = extract(email)
+        if choice == "1":
+            recipient_email = str(input("Recipient email : "))
+            plain_message = str(input("Message : "))
+            U, ciphertext = user.encrypt(recipient_email, plain_message)
+            if U and ciphertext:
+                print("\nEncrypted message:")
+                print(f"U: {U}")
+                print(f"Ciphertext: {ciphertext}")
 
+        
+        elif choice == "2":
+            email = str(input("Your email: "))
+            user.get_private_key(email)
 
-        elif(option == 3):
-            print("*****************************************************") 
-            print("************** Decrypting a message sent to you ***************\n")
-            U = str(input("Write the first part of the message : "))
-            Ciphertext =  str(input("Write the second part of the message : "))
-            time.sleep(4)
-            message_dechiffre = decrypt(U, Ciphertext)
-
-        elif(option == 4):
-            print("******** Try not to laugh too hard x) *********%n")
-            time.sleep(4)
+        
+        elif choice == "3":
+            if not user.d_id:
+                print("Get private key first!")
+                continue
+            U = input("Enter U: ")
+            cipher = str(input("Enter ciphertext: "))
+            decrypted = user.decrypt(U, cipher)
+            if decrypted:
+                print(f"\n Decrypted: '{decrypted}'")
+        
+        
+        elif choice == "4":            
             print(get_michael_scott_quote())
-            
-        else :
+
+        elif choice == "5":
             print("Goodbye, catch you on the flippity flip!")
-            # break
+            break
 
 
-            
-ibe, P, P_pub, s = setup()
-menuPrincipal()
+def main():
+    print(f"Starting IBE Encryption System ....")
+
+    user = create_user_from_server()
+    if not user:
+        print("Cannot start without server connection")
+        return 
+
+    menu_principal(user)
+
+
+
+if __name__ == "__main__":
+    main()
