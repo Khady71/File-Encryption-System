@@ -72,7 +72,6 @@ class IBEEncryption:
         else:
             message_int = message
         
-        # print("Hello Khady, i am hereee")
         
         Q_id = self.group.hash(ID,G1)
         r = self.group.random(ZR)

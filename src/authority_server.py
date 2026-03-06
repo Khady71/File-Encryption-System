@@ -25,9 +25,10 @@ def initialize_ibe():
         try:
             with open(SETUP_FILE, 'r') as f:
                 pub_params = json.load(f)
-                _P = deserialize(pub_params['P'])
-                _P_pub = deserialize(pub_params['P_pub'])
-                _s = deserialize(pub_params['s'])
+                _group = PairingGroup('SS512')
+                _P = deserialize(_group, bytes.fromhex(pub_params['P']))
+                _P_pub = deserialize(_group, bytes.fromhex(pub_params['P_pub']))
+                _s = deserialize(_group, bytes.fromhex(pub_params['s']))
 
                 _ibe = IBEEncryption('SS512')
 
@@ -52,9 +53,9 @@ def initialize_ibe():
     try:
         with open(SETUP_FILE, 'w') as f:
             json.dump({
-                'P': serialize(_P),
-                'P_pub': serialize(_P_pub),
-                's': serialize(_s),
+                'P': serialize(_P).hex(),
+                'P_pub': serialize(_P_pub).hex(),
+                's': serialize(_s).hex(),
                 'version': '1.0'
             }, f, indent=2)
         print(f"IBE state saved to {SETUP_FILE}")
@@ -79,8 +80,8 @@ app = FastAPI(lifespan=lifespan)
 def get_public_params():
     global _P, _P_pub
     return {
-        "P" : serialize(_P), 
-        "P_pub" : serialize(_P_pub)
+        "P" : serialize(_P).hex(), 
+        "P_pub" : serialize(_P_pub).hex()
     }
 
 
@@ -104,4 +105,7 @@ def get_private_key(email: str):
 def reset_system():
     # reset_ibe_server()
     return {"message": "System reset successfully"}
+
+
+
 

@@ -1,5 +1,5 @@
-from charm.toolbox.pairinggroup import PairingGroup, G1, ZR, pair
-from ibe_utils import IBEEncryption, element_to_storable, storable_to_element
+from charm.toolbox.pairinggroup import PairingGroup, G1, ZR, pair, serialize, deserialize
+from ibe_utils import IBEEncryption
 import requests
 
 class User:
@@ -28,8 +28,11 @@ class User:
             response.raise_for_status()
             data = response.json()
 
-            self.P = storable_to_element(data['P'])
-            self.P_pub = storable_to_element(data['P_pub'])
+            _group = PairingGroup('SS512')
+            self.P = deserialize(_group,bytes.fromhex(data['P']))
+            self.P_pub = deserialize(_group, bytes.fromhex(data['P_pub']))
+
+            print('I got P and P_pub yaaay')
 
             if not self.ibe:
                 self.ibe = IBEEncryption('SS512')
@@ -70,7 +73,11 @@ class User:
             if not self.get_public_params_from_server():
                 return None, None
 
+        # self.get_public_params_from_server():
         print(f"n\Encrypting for {recipient_email}")
+        print("here is P :  ", self.P)
+
+        # self.P = deserialize(_group, bytes.fromhex("313a675a727658483475694f37336d3433445a486b34456d4f627567763154317168684339522b6c57647a7a5046543857434a6449302f624646717852676a66634f4265474878326e63383135476e38624f474b4e666c51413d"))
        
         # try:      
         U, ciphertext = self.ibe.encrypt(recipient_email, self.P, message_original)
@@ -105,4 +112,14 @@ class User:
             print(f" Decryption failed: {e}")
             return None
     
+
+# SETUP_FILE = Path("ibe_state.json")
+# if SETUP_FILE.exists():
+#     try:
+#         with open(SETUP_FILE, 'r') as f:
+#             pub_params = json.load(f)
+#             _group = PairingGroup('SS512')
+#             _P = deserialize(_group, bytes.fromhex(pub_params['P']))
+#             _P_pub = deserialize(_group, bytes.fromhex(pub_params['P_pub']))
+#             _s = deserialize(_group, bytes.fromhex(pub_params['s']))
 

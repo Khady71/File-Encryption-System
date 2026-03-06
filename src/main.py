@@ -4,6 +4,7 @@ import time
 import requests
 from user import User
 from fun_fact import get_michael_scott_quote
+from charm.toolbox.pairinggroup import serialize, deserialize, PairingGroup
 
 
 
@@ -13,11 +14,17 @@ def create_user_from_server():
 
     print("\n Connecting to IBE server")
     try:
+       
         response = requests.get("http://localhost:8000/setup")
         response.raise_for_status()
         data = response.json()
 
-        user = User(P=data['P'], P_pub=data['P_pub'])
+
+        _group = PairingGroup('SS512')
+        user = User(
+            deserialize(_group,bytes.fromhex(data['P'])), 
+            deserialize(_group,bytes.fromhex(data['P_pub']))
+            )
         print(f" User created with server's public parameters")
         return user
     except Exception as e:
@@ -31,7 +38,7 @@ def menu_principal(user):
         print("\n" + "="*60)
         print(f" Current user: {user.ID if user.ID else "Not set"}")
         print(f" Private key:{ "Loaded" if user.d_id else "Not loaded"}")
-        print(f"Public params: {'Configured' if user.ibe else 'Not configured'}")
+        print(f" Public params: {'Configured' if user.ibe else 'Not configured'}")
         
         print("\nOptions:")
         print("[1] Encrypt a message")
