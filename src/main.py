@@ -5,6 +5,7 @@ import requests
 from user import User
 from fun_fact import get_michael_scott_quote
 from charm.toolbox.pairinggroup import serialize, deserialize, PairingGroup
+import ast
 
 
 
@@ -13,23 +14,19 @@ from charm.toolbox.pairinggroup import serialize, deserialize, PairingGroup
 def create_user_from_server():
 
     print("\n Connecting to IBE server")
-    try:
+    try:    
+        user = User()  
+        # print("Just hanging around ")
+        user.get_public_params_from_server() 
        
-        response = requests.get("http://localhost:8000/setup")
-        response.raise_for_status()
-        data = response.json()
-
-
-        _group = PairingGroup('SS512')
-        user = User(
-            deserialize(_group,bytes.fromhex(data['P'])), 
-            deserialize(_group,bytes.fromhex(data['P_pub']))
-            )
+        # print("Just hanging around ")
+        # print(f"2 - P group id: {id(self.P)}")   
         print(f" User created with server's public parameters")
         return user
     except Exception as e:
         print(f" Failed to connect to server: {e}")
         return None
+    
 
 def menu_principal(user):
     while True:
@@ -53,6 +50,7 @@ def menu_principal(user):
             recipient_email = str(input("Recipient email : "))
             plain_message = str(input("Message : "))
             U, ciphertext = user.encrypt(recipient_email, plain_message)
+            
             if U and ciphertext:
                 print("\nEncrypted message:")
                 print(f"U: {U}")
@@ -68,8 +66,9 @@ def menu_principal(user):
             if not user.d_id:
                 print("Get private key first!")
                 continue
-            U = input("Enter U: ")
-            cipher = str(input("Enter ciphertext: "))
+            U_hex = input("Enter U: ")
+            U = user.ibe.group.deserialize(bytes.fromhex(U_hex))
+            cipher = int(input("Enter ciphertext: "))
             decrypted = user.decrypt(U, cipher)
             if decrypted:
                 print(f"\n Decrypted: '{decrypted}'")

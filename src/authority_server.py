@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pathlib import Path
 import pickle
-from ibe_utils import IBEEncryption, element_to_storable, storable_to_element
+from ibe_utils import IBEEncryption
 from charm.toolbox.pairinggroup import serialize, deserialize, PairingGroup
 import json
 import base64
@@ -14,23 +14,24 @@ _P = None
 _P_pub = None
 _s = None
 SETUP_FILE = Path("ibe_state.json")
+_GROUP = PairingGroup('SS512')
 
 
 def initialize_ibe():
     """Initialize IBE system (runs once)"""
     global _ibe, _P, _P_pub, _s
     
+    _ibe = IBEEncryption('SS512')
     
     if SETUP_FILE.exists():
         try:
             with open(SETUP_FILE, 'r') as f:
                 pub_params = json.load(f)
-                _group = PairingGroup('SS512')
-                _P = deserialize(_group, bytes.fromhex(pub_params['P']))
-                _P_pub = deserialize(_group, bytes.fromhex(pub_params['P_pub']))
-                _s = deserialize(_group, bytes.fromhex(pub_params['s']))
-
-                _ibe = IBEEncryption('SS512')
+                 
+                
+                _P = _ibe.group.deserialize(bytes.fromhex(pub_params['P']))
+                _P_pub = _ibe.group.deserialize(bytes.fromhex(pub_params['P_pub']))
+                _s = _ibe.group.deserialize(bytes.fromhex(pub_params['s']))
 
 
                 _ibe.P = _P
@@ -44,18 +45,19 @@ def initialize_ibe():
         except Exception as e:
             print(f"Error loading state: {e}")
             print("Will generate new parameters...")
+            SETUP_FILE.unlink()
     
     print(" Generating new IBE parameters...")
-    _ibe = IBEEncryption('SS512')
     _P, _P_pub, _s = _ibe.setup()
     
+
     # Save state for next time
     try:
         with open(SETUP_FILE, 'w') as f:
             json.dump({
-                'P': serialize(_P).hex(),
-                'P_pub': serialize(_P_pub).hex(),
-                's': serialize(_s).hex(),
+                'P': _ibe.group.serialize(_P).hex(),
+                'P_pub': _ibe.group.serialize(_P_pub).hex(),
+                's': _ibe.group.serialize(_s).hex(),
                 'version': '1.0'
             }, f, indent=2)
         print(f"IBE state saved to {SETUP_FILE}")
@@ -78,10 +80,10 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/setup")
 def get_public_params():
-    global _P, _P_pub
+    global _ibe,_P, _P_pub
     return {
-        "P" : serialize(_P).hex(), 
-        "P_pub" : serialize(_P_pub).hex()
+        "P" : _ibe.group.serialize(_P).hex(), 
+        "P_pub" : _ibe.group.serialize(_P_pub).hex()
     }
 
 
@@ -94,7 +96,7 @@ def get_private_key(email: str):
         d_id = _ibe.extract(email)
         return {
             "email": email,
-            "d_id": element_to_storable(d_id)
+            "d_id": _ibe.group.serialize(d_id).hex()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

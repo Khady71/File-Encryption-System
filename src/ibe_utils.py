@@ -6,31 +6,19 @@ from charm.toolbox.hash_module import Hash
 import base64
 
 
-def element_to_storable(element):
-    """Convert pairing element to storable format"""
-    # serialize() returns bytes, we convert to base64 string for JSON
-    return base64.b64encode(serialize(element)).decode('utf-8')
-
-
-def storable_to_element(storable_str):
-    """Convert stored string back to pairing element"""
-    # Create a pairing group for deserialization
-    group = PairingGroup('SS512')
-    # Decode base64 and deserialize
-    return deserialize(base64.b64decode(storable_str), group)
-
 
 
 class IBEEncryption:
     def __init__(self, group_curve='SS512'):
         self.group = PairingGroup(group_curve)
         # self.hash = Hash(self.group)
+        # self.group = None
         self.P = None          # Générateur public
         self.P_pub = None      # Clé publique maître
         self.s = None          # Secret maître (privé)
         self.initialized = False
         
-        print(f" Système IBE initialisé avec la courbe {group_curve}")
+        # print(f" Système IBE initialisé avec la courbe {group_curve}")
     
     # =========================
     # Setup
@@ -53,7 +41,7 @@ class IBEEncryption:
         Q_id = self.group.hash(ID,G1)
         d_id = self.s * Q_id
         
-        print(f"Private key is generated for id : '{ID}'")
+        print(f"Private key is generated for ID : '{ID}'")
         return d_id
 
     
@@ -67,6 +55,8 @@ class IBEEncryption:
         #     raise Exception("The system is not initialized. Run setup() before")
         
         # Convertir le message en entier si nécessaire
+
+
         if isinstance(message, str):
             message_int = int.from_bytes(message.encode(), 'big')
         else:
@@ -88,17 +78,24 @@ class IBEEncryption:
         ciphertext = message_int ^ int(key)
         
         print(f"Message chiffré pour '{ID}'")
-        return (U, ciphertext)
+        U_bytes = self.group.serialize(U)
+        U_hex = U_bytes.hex()
+        return (U_hex, ciphertext)
     
     # =========================
     # Decrypt
     # =========================
     
     def decrypt(self, d_id, ciphertext, decode_to_string=False):
+        
      
         U, V = ciphertext
-        
+        # print('U : ', U)
+        # print('V : ', V)
+        print("type U:", type(U))
+        print("type d_id:", type(d_id))        
         g_id = pair(d_id, U)
+       
         g_id_bytes = self.group.serialize(g_id)
         
         key = self.group.hash(g_id_bytes, ZR)
