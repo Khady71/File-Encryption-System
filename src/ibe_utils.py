@@ -11,14 +11,13 @@ import base64
 class IBEEncryption:
     def __init__(self, group_curve='SS512'):
         self.group = PairingGroup(group_curve)
-        # self.hash = Hash(self.group)
-        # self.group = None
+       
         self.P = None          # Générateur public
         self.P_pub = None      # Clé publique maître
         self.s = None          # Secret maître (privé)
         self.initialized = False
         
-        # print(f" Système IBE initialisé avec la courbe {group_curve}")
+        print(f" Système IBE initialisé avec la courbe {group_curve}")
     
     # =========================
     # Setup
@@ -66,12 +65,10 @@ class IBEEncryption:
         Q_id = self.group.hash(ID,G1)
         r = self.group.random(ZR)
         
-     
         U = r * self.P
         
         g_id = pair(Q_id, self.P_pub) ** r
         g_id_bytes = self.group.serialize(g_id)
-
 
         key = self.group.hash(g_id_bytes, ZR)
         
@@ -90,10 +87,10 @@ class IBEEncryption:
         
      
         U, V = ciphertext
-        # print('U : ', U)
-        # print('V : ', V)
-        print("type U:", type(U))
-        print("type d_id:", type(d_id))        
+        # # print('U : ', U)
+        # # print('V : ', V)
+        # print("type U:", type(U))
+        # print("type d_id:", type(d_id))        
         g_id = pair(d_id, U)
        
         g_id_bytes = self.group.serialize(g_id)
@@ -102,7 +99,7 @@ class IBEEncryption:
         
         message_int = V ^ int(key)
         
-        # Convertir en string si demandé
+        # Convertir en string 
         if decode_to_string:
             try:
                 message = message_int.to_bytes(

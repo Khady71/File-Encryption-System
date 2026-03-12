@@ -6,8 +6,7 @@ from user import User
 from fun_fact import get_michael_scott_quote
 from charm.toolbox.pairinggroup import serialize, deserialize, PairingGroup
 import ast
-
-
+from colorama import init, Fore, Back, Style
 
 
     
@@ -16,11 +15,9 @@ def create_user_from_server():
     print("\n Connecting to IBE server")
     try:    
         user = User()  
-        # print("Just hanging around ")
         user.get_public_params_from_server() 
        
-        # print("Just hanging around ")
-        # print(f"2 - P group id: {id(self.P)}")   
+         
         print(f" User created with server's public parameters")
         return user
     except Exception as e:
@@ -30,9 +27,15 @@ def create_user_from_server():
 
 def menu_principal(user):
     while True:
-        print("\n" + "="*60)
-        print(" Welcome To ENCRYPT AND SEND ")
-        print("\n" + "="*60)
+        BANNER = """
+        ╔═══════════════════════════════════════════════════════════════╗
+        ║                 🔐 IBE-AES: ENCRYPT & SEND                    ║
+        ║           Identity-Based Encryption Suite v1.0.0               ║
+        ║        https://github.com/Khady71/file-encryption-system       ║
+        ╚════════════════════════════════════════════════════════════════╝
+        """
+       
+        print(Fore.CYAN + BANNER + Style.RESET_ALL)
         print(f" Current user: {user.ID if user.ID else "Not set"}")
         print(f" Private key:{ "Loaded" if user.d_id else "Not loaded"}")
         print(f" Public params: {'Configured' if user.ibe else 'Not configured'}")
