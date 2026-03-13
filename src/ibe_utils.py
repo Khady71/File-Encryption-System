@@ -58,6 +58,8 @@ class IBEEncryption:
 
         if isinstance(message, str):
             message_int = int.from_bytes(message.encode(), 'big')
+        elif isinstance(message, bytes):
+            message_int = int.from_bytes(message, 'big')
         else:
             message_int = message
         
@@ -77,20 +79,18 @@ class IBEEncryption:
         print(f"Message chiffré pour '{ID}'")
         U_bytes = self.group.serialize(U)
         U_hex = U_bytes.hex()
-        return (U_hex, ciphertext)
+        ciphertext_bytes = self.group.serialize(U)
+        ciphertext_hex = ciphertext_bytes.hex()
+        return (U_hex, ciphertext_hex)
     
     # =========================
     # Decrypt
     # =========================
     
-    def decrypt(self, d_id, ciphertext, decode_to_string=False):
+    def decrypt(self, d_id, ciphertext):
         
      
-        U, V = ciphertext
-        # # print('U : ', U)
-        # # print('V : ', V)
-        # print("type U:", type(U))
-        # print("type d_id:", type(d_id))        
+        U, V = ciphertext       
         g_id = pair(d_id, U)
        
         g_id_bytes = self.group.serialize(g_id)
@@ -98,20 +98,25 @@ class IBEEncryption:
         key = self.group.hash(g_id_bytes, ZR)
         
         message_int = V ^ int(key)
+
+        print(f"message_int bit length: {message_int.bit_length()}")
+        print(f"message_int byte length: {(message_int.bit_length() + 7) // 8}")
+
+
         
-        # Convertir en string 
-        if decode_to_string:
-            try:
-                message = message_int.to_bytes(
-                    (message_int.bit_length() + 7) // 8, 'big'
-                ).decode()
-            except:
-                message = str(message_int)
-        else:
-            message = message_int
+        # # Convertir en string 
+        # if decode_to_string:
+        #     try:
+        #         message = message_int.to_bytes(
+        #             (message_int.bit_length() + 7) // 8, 'big'
+        #         ).decode()
+        #     except:
+        #         message = str(message_int)
+        # else:
+        #     message = message_int
         
         print("Message is decrypted successfully")
-        return message
+        return message_int 
     
     # =========================
     # Méthodes utilitaires

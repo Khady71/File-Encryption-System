@@ -28,36 +28,35 @@ def create_user_from_server():
 def menu_principal(user):
     while True:
         BANNER = """
-        ╔═══════════════════════════════════════════════════════════════╗
-        ║                 🔐 IBE-AES: ENCRYPT & SEND                    ║
+        ╔════════════════════════════════════════════════════════════════╗
+        ║                 Welcome to ENCRYPT & SEND FILES                ║
         ║           Identity-Based Encryption Suite v1.0.0               ║
         ║        https://github.com/Khady71/file-encryption-system       ║
         ╚════════════════════════════════════════════════════════════════╝
         """
        
         print(Fore.CYAN + BANNER + Style.RESET_ALL)
-        print(f" Current user: {user.ID if user.ID else "Not set"}")
-        print(f" Private key:{ "Loaded" if user.d_id else "Not loaded"}")
-        print(f" Public params: {'Configured' if user.ibe else 'Not configured'}")
+        print(f" Current user: {Fore.RED}{user.ID if user.ID else "Not set"}")
+        print(f" {Style.RESET_ALL}Private key: {Fore.GREEN}{ "Loaded" if user.d_id else "Not loaded"}")
+        print(f" {Style.RESET_ALL}Public params: {Fore.CYAN}{'Configured' if user.ibe else 'Not configured'}")
         
-        print("\nOptions:")
-        print("[1] Encrypt a message")
-        print("[2] Get private key")
-        print("[3] Decrypt a message")
-        print("[4] Fun Fact : Michael Scott once said : ")
-        print("[5] Quit")   
+        print(f"\n{Fore.WHITE}Options:{Style.RESET_ALL}")
+        print(f"  {Fore.CYAN}[1]{Style.RESET_ALL} Encrypt a file for a recipient")
+        print(f"  {Fore.GREEN}[2]{Style.RESET_ALL} Get a private key from server")
+        print(f"  {Fore.YELLOW}[3]{Style.RESET_ALL} Decrypt a file")
+        print(f"  {Fore.MAGENTA}[4]{Style.RESET_ALL} Fun Fact")
+        print(f"  {Fore.RED}[5]{Style.RESET_ALL} Quit")  
 
-        choice = input("\nChoose : ")
+        choice = input("\nYour Choice : ")
 
         if choice == "1":
             recipient_email = str(input("Recipient email : "))
-            plain_message = str(input("Message : "))
-            U, ciphertext = user.encrypt(recipient_email, plain_message)
+            file_path = str(input("File path to be encrypted : "))
+            output_path = user.encrypt_and_pack(file_path, recipient_email)
             
-            if U and ciphertext:
-                print("\nEncrypted message:")
-                print(f"U: {U}")
-                print(f"Ciphertext: {ciphertext}")
+            if output_path:
+                print("\nThe encrypted file to be send is available here : ", output_path)
+
 
         
         elif choice == "2":
@@ -69,12 +68,10 @@ def menu_principal(user):
             if not user.d_id:
                 print("Get private key first!")
                 continue
-            U_hex = input("Enter U: ")
-            U = user.ibe.group.deserialize(bytes.fromhex(U_hex))
-            cipher = int(input("Enter ciphertext: "))
-            decrypted = user.decrypt(U, cipher)
-            if decrypted:
-                print(f"\n Decrypted: '{decrypted}'")
+            file_path = input("File path to be decrypted :")    
+            output_path = user.unpack_and_decrypt(file_path)
+            if output_path:
+                print(f"\n The decrypted file is available here: '{output_path}'")
         
         
         elif choice == "4":            
