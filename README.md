@@ -22,13 +22,9 @@ Study real-world constraints, including:
 
 # Current Status
 
-A first version is currently being implemented. The goal of this phase is to reproduce the academic logic while:
+A first python version is implemented with charm crypto. It reproduces  the academic logic of IBE from Boneh-Franklin.
+A second rust version is being implemented with arkworks. For that version, i am using the CL-IBE from Al Riyami and Paterson paper. It eliminates the key-escrow problem and arkworks provides curves for production-ready application. 
 
-- Migrating from Java to Python
-
-- Replacing JPBC with Charm-Crypto
-
-- Refactoring the architecture for better extensibility
 
 
 # Future Work
