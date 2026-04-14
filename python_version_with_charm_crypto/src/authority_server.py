@@ -16,7 +16,6 @@ _s = None
 SETUP_FILE = Path("ibe_state.json")
 _GROUP = PairingGroup('SS512')
 
-
 def initialize_ibe():
     """Initialize IBE system (runs once)"""
     global _ibe, _P, _P_pub, _s
@@ -27,12 +26,10 @@ def initialize_ibe():
         try:
             with open(SETUP_FILE, 'r') as f:
                 pub_params = json.load(f)
-                 
-                
+                  
                 _P = _ibe.group.deserialize(bytes.fromhex(pub_params['P']))
                 _P_pub = _ibe.group.deserialize(bytes.fromhex(pub_params['P_pub']))
                 _s = _ibe.group.deserialize(bytes.fromhex(pub_params['s']))
-
 
                 _ibe.P = _P
                 _ibe.P_pub = _P_pub
@@ -40,14 +37,14 @@ def initialize_ibe():
                 _ibe.initialized = True
 
 
-                print("Loaded existing IBE state")
+                print("Existing IBE state loaded ")
                 return
         except Exception as e:
             print(f"Error loading state: {e}")
             print("Will generate new parameters...")
             SETUP_FILE.unlink()
     
-    print(" Generating new IBE parameters...")
+    print("Generating new IBE parameters...")
     _P, _P_pub, _s = _ibe.setup()
     
 
@@ -90,8 +87,8 @@ def get_public_params():
 @app.get("/getPrivateKey/{email}")
 def get_private_key(email: str):
     global _ibe
-    if not _ibe:
-        initialize_ibe()
+    # if not _ibe:
+    #     initialize_ibe()
     try:
         d_id = _ibe.extract(email)
         return {
