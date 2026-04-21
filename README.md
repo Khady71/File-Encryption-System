@@ -23,7 +23,7 @@ Study real-world constraints, including:
 # Current Status
 
 A first python version is implemented with charm crypto. It reproduces  the academic logic of IBE from Boneh-Franklin.
-A second rust version is being implemented with arkworks. For that version, i am using the CL-IBE from Al Riyami and Paterson paper. It eliminates the key-escrow problem and arkworks provides curves for production-ready application. 
+A second rust version is being implemented with arkworks. For that version, i am using the CL-IBE from Al Riyami and Paterson paper. It eliminates the key-escrow problem and arkworks provides curves for production-ready application. Here is the code repository https://github.com/Khady71/certificatless-ibe-on-arkworks.
 
 
 
